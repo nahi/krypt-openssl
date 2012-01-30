@@ -1,3 +1,5 @@
+require 'stringio'
+
 module OpenSSL
   remove_const(:ASN1)
   ASN1 = Krypt::ASN1
@@ -7,15 +9,18 @@ module OpenSSL
     EndOfContent = EndOfContents
 
     # DIFF: tagging is not supported
-    [Boolean, Integer, Enumerated, BitString, OctetString, UTF8String, NumericString, PrintableString, T61String, VideotexString, IA5String, GraphicString, ISO64String, GeneralString, UniversalString, BMPString, Null, ObjectId, UTCTime, GeneralizedTime, Sequence, Set].each do |klass|
+    class ASN1Data
+      attr_accessor :tagging
+    end
+    [Boolean, Integer, Enumerated, BitString, OctetString, UTF8String, NumericString, PrintableString, T61String, VideotexString, IA5String, GraphicString, ISO64String, GeneralString, UniversalString, BMPString, Null, ObjectId, UTCTime, GeneralizedTime, Sequence, Set, ASN1Data].each do |klass|
       class << klass
         alias old_new new
         def new(*args)
           if args.size > 1
-            if args[2] != :IMPLICIT
+            if args[2] && args[2] != :IMPLICIT
               raise "explicit tagging is not supported: #{args[2]}"
             end
-            args = [args[0], args[1], args[3]]
+            args = [args[0], args[1], args[3] || :UNIVERSAL]
           end
           old_new(*args)
         end
@@ -28,10 +33,80 @@ module OpenSSL
       }
     end
 
+    # DIFF: different tag number constants
+    OBJECT = OBJECT_ID
+    [:UTF8STRING, :NUMERICSTRING, :PRINTABLESTRING, :T61STRING, :VIDEOTEXSTRING, :IA5STRING, :GRAPHICSTRING, :ISO64STRING, :GENERALSTRING, :UNIVERSALSTRING, :BMPSTRING].each do |name|
+      const_set(name, const_get(name.to_s.sub(/STRING$/, '_STRING')))
+    end
+
     # DIFF: OpenSSL common names are not supported
-    class << ObjectId
-      def register(oid, sn, ln)
-        true
+    class ObjectId
+      MAP = {
+        '2.5.29.19' => 'basicConstraints',
+        '1.2.840.113549.1.1.1' => 'rsaEncryption',
+        '1.2.840.10040.4.1' => 'DSA'
+      }
+
+      class << self
+        def register(oid, sn, ln)
+          true
+        end
+
+        alias object_id_new new
+        def new(*args)
+          if MAP.value?(args[0])
+            args[0] = MAP.key(args[0])
+          end
+          object_id_new(*args)
+        end
+      end
+
+      alias object_id_value value
+      def value
+        v = object_id_value
+        if MAP.key?(v)
+          v = MAP[v]
+        end
+        v
+      end
+
+      def sn
+        raise 'OpenSSL common names are not supported'
+      end
+      alias oid sn
+    end
+
+    # DIFF: ? TODO
+    class BitString
+      alias old_unused_bits unused_bits
+      def unused_bits
+        old_unused_bits || 0
+      end
+    end
+
+    # DIFF: ? TODO
+    remove_const(:Constructive)
+    Constructive = ASN1Data
+
+    # DIFF: ASN1.decode_all is not implemented
+    class << self
+      def decode_all(str)
+        raise 'StringIO as IO is not supported?'
+        io = StringIO.new(str)
+        ary = []
+        while !io.eof?
+          ary << decode(io)
+        end
+        ary
+      end
+    end
+  end
+
+  # DIFF: X509::Attribute#value= is not supported
+  module X509
+    class Attribute
+      def value=(value)
+        raise 'X509::Attribute#value= depends C-level class object in OpenSSL::ASN1'
       end
     end
   end
