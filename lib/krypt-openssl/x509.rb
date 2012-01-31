@@ -1,5 +1,5 @@
 module OpenSSL
-  # DIFF: X509::Attribute#value= is not supported
+  # DIFF [intentional]: X509::Attribute#value= is not supported because ossl depends C-level class object. ossl needs a fix.
   module X509
     class Attribute
       def value=(value)

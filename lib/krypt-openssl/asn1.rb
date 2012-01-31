@@ -8,7 +8,7 @@ module OpenSSL
     # DIFF: class name change
     EndOfContent = EndOfContents
 
-    # DIFF: tagging is not supported
+    # DIFF [intentional]: tagging is not supported 
     class ASN1Data
       attr_accessor :tagging
     end
@@ -33,13 +33,13 @@ module OpenSSL
       }
     end
 
-    # DIFF: different tag number constants
+    # DIFF: different tag number constant names
     OBJECT = OBJECT_ID
     [:UTF8STRING, :NUMERICSTRING, :PRINTABLESTRING, :T61STRING, :VIDEOTEXSTRING, :IA5STRING, :GRAPHICSTRING, :ISO64STRING, :GENERALSTRING, :UNIVERSALSTRING, :BMPSTRING].each do |name|
       const_set(name, const_get(name.to_s.sub(/STRING$/, '_STRING')))
     end
 
-    # DIFF: Krypt handles UTF8 encoding correctly
+    # DIFF [intentional]: Krypt handles UTF8 encoding correctly
     class UTF8String
       alias old_value value
       def value
@@ -49,7 +49,7 @@ module OpenSSL
       end
     end
 
-    # DIFF: OpenSSL common names are not supported
+    # DIFF [intentional]: OpenSSL common names are not supported
     class ObjectId
       MAP = {
         '2.5.29.19' => 'basicConstraints',
