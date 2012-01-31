@@ -5,3 +5,4 @@ warn 'This library replaces some implementation of OpenSSL'
 warn 'Do NOT use this in production'
 
 require 'krypt-openssl/asn1'
+require 'krypt-openssl/x509'

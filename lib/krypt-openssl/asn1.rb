@@ -76,18 +76,6 @@ module OpenSSL
       alias oid sn
     end
 
-    # DIFF: ? TODO
-    class BitString
-      alias old_unused_bits unused_bits
-      def unused_bits
-        old_unused_bits || 0
-      end
-    end
-
-    # DIFF: ? TODO
-    remove_const(:Constructive)
-    Constructive = ASN1Data
-
     # DIFF: ASN1.decode_all is not implemented
     class << self
       def decode_all(str)
@@ -98,15 +86,6 @@ module OpenSSL
           ary << decode(io)
         end
         ary
-      end
-    end
-  end
-
-  # DIFF: X509::Attribute#value= is not supported
-  module X509
-    class Attribute
-      def value=(value)
-        raise 'X509::Attribute#value= depends C-level class object in OpenSSL::ASN1'
       end
     end
   end
