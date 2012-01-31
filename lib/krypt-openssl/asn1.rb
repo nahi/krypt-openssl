@@ -20,7 +20,7 @@ module OpenSSL
             if args[2] && args[2] != :IMPLICIT
               raise "explicit tagging is not supported: #{args[2]}"
             end
-            args = [args[0], args[1], args[3] || :UNIVERSAL]
+            args = [args[0], args[1], args[3] || :CONTEXT_SPECIFIC]
           end
           old_new(*args)
         end
@@ -37,6 +37,16 @@ module OpenSSL
     OBJECT = OBJECT_ID
     [:UTF8STRING, :NUMERICSTRING, :PRINTABLESTRING, :T61STRING, :VIDEOTEXSTRING, :IA5STRING, :GRAPHICSTRING, :ISO64STRING, :GENERALSTRING, :UNIVERSALSTRING, :BMPSTRING].each do |name|
       const_set(name, const_get(name.to_s.sub(/STRING$/, '_STRING')))
+    end
+
+    # DIFF: Krypt handles UTF8 encoding correctly
+    class UTF8String
+      alias old_value value
+      def value
+        v = old_value
+        v.force_encoding("ASCII-8BIT")
+        v
+      end
     end
 
     # DIFF: OpenSSL common names are not supported
